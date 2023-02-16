@@ -1,0 +1,86 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Push gdbserver",
+            "type": "shell",
+            "command": "adb",
+            "args": [
+                "push",
+                "${env:ANDROID_NDK_HOME}/prebuilt/android-arm64/gdbserver/gdbserver",
+                "/data/local/tmp/"
+            ]
+        },
+        {
+            "label": "Push target",
+            "type": "shell",
+            "command": "adb",
+            "args": [
+                "push",
+                "${command:cmake.getLaunchTargetPath}",
+                "/data/local/tmp/"
+            ]
+        },
+        {
+            "label": "Chmod target",
+            "type": "shell",
+            "command": "adb",
+            "args": [
+                "shell",
+                "chmod",
+                "+x",
+                "/data/local/tmp/${command:cmake.launchTargetFilename}"
+            ],
+            "dependsOn": [
+                "Push target"
+            ]
+        },
+        {
+            "label": "Chmod gdbserver",
+            "type": "shell",
+            "command": "adb",
+            "args": [
+                "shell",
+                "chmod",
+                "+x",
+                "/data/local/tmp/gdbserver"
+            ],
+            "dependsOn": [
+                "Push gdbserver"
+            ]
+        },
+        {
+            "label": "Forward debug port",
+            "type": "shell",
+            "command": "adb",
+            "args": [
+                "forward",
+                "tcp:3880",
+                "tcp:3880"
+            ],
+            "dependsOn": [
+                "Push gdbserver",
+                "Push target"
+            ]
+        },
+        {
+            "label": "Start program with gdbserver",
+            "type": "shell",
+            "command": "adb",
+            "args": [
+                "shell",
+                "/data/local/tmp/gdbserver",
+                ":3880",
+                "/data/local/tmp/${command:cmake.launchTargetFilename}"
+            ],
+            "dependsOn": [
+                "Forward debug port",
+                "Chmod target",
+                "Chmod gdbserver"
+            ],
+            "problemMatcher": []
+        }
+    ]
+}
